@@ -1,0 +1,12 @@
+{
+  "name": "Mi Espacio · Sucesos Mágicos",
+  "short_name": "Mi Espacio",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#eae2ec",
+  "theme_color": "#8408a8",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

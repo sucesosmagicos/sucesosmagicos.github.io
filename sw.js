@@ -1,5 +1,5 @@
 // Service worker de Mi Espacio: permite instalarla como app y abrirla rápido.
-const CACHE = 'mi-espacio-v1';
+const CACHE = 'mi-espacio-v2';
 const BASE = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(BASE)).then(() => self.skipWaiting()));

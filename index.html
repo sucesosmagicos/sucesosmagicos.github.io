@@ -43,6 +43,19 @@
   .spin{width:34px;height:34px;border:3px solid #e4cdee;border-top-color:#8408a8;border-radius:50%;margin:0 auto 12px;animation:g 1s linear infinite}
   @keyframes g{to{transform:rotate(360deg)}}
   .inst{display:none}
+  .hola{text-align:center;color:#7a5a86;font-size:15px;margin:-4px 0 16px}
+  .prod{display:flex;align-items:center;gap:14px;width:100%;background:#fff;border:0;border-radius:18px;padding:14px;margin:0 0 14px;
+    box-shadow:0 2px 12px rgba(132,8,168,.08);text-align:left;cursor:pointer;font-family:inherit;color:inherit;text-decoration:none}
+  .prod:active{transform:scale(.99)}
+  .tapa{position:relative;overflow:hidden;width:76px;height:76px;flex:none;border-radius:14px;background:#f3e6f7;display:flex;align-items:center;justify-content:center;font-size:34px}
+  .tapa img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .prod .tx{flex:1;min-width:0}
+  .prod .nm{display:block;color:#ff3fae;font-weight:bold;font-size:17px;line-height:1.25}
+  .prod .ds{display:block;color:#7a5a86;font-size:13px;margin-top:4px;line-height:1.35}
+  .prod .mini{display:block;height:6px;background:#f3e6f7;border-radius:6px;overflow:hidden;margin-top:8px}
+  .prod .mini i{display:block;height:100%;background:linear-gradient(90deg,#ff66c4,#8408a8)}
+  .prod .fl{color:#8408a8;font-size:26px;flex:none}
+  .volver{display:inline-flex;align-items:center;gap:6px;background:none;border:0;color:#8408a8;font-weight:bold;font-size:15px;padding:4px 2px 14px;cursor:pointer;font-family:inherit}
 </style>
 </head>
 <body>
@@ -73,50 +86,108 @@ function botones(archivos){
   }).join('');
 }
 
+var D = null;
+var INFO = {
+  pack:     { ico: '🌿', img: 'https://dcdn-us.mitiendanube.com/stores/005/046/890/products/guias-pack-bienestar-ba42d4f53a8e33664b17919373173134-640-0.webp', ds: '12 guías para volver a vos' },
+  taller:   { ico: '🌙', img: 'https://dcdn-us.mitiendanube.com/stores/005/046/890/products/portada-dependencia-253d357e4fb0b7a57117307606986191-640-0.webp', ds: '21 días · un video y un mantra por día' },
+  alquimia: { ico: '🔮', img: 'https://dcdn-us.mitiendanube.com/stores/005/046/890/products/alquimia-emocional-7711a9ac690f6cbfdd17920256519482-640-0.webp', ds: '7 rituales paso a paso' },
+  ebook:    { ico: '📖', img: 'https://dcdn-us.mitiendanube.com/stores/005/046/890/products/download-980x1536-6a54f692ba8e1e48ed17283372983021-640-0.webp', ds: 'Reencontrándome con mi Amor Propio' }
+};
+
 function render(d){
+  D = d;
+  d.productos.forEach(function(p){ p.hechos = p.hechos || []; p.secciones = p.secciones || []; p.archivos = p.archivos || []; });
   if (!d.productos.length){
     app.innerHTML = '<div class="card"><h2>Todavía no hay material</h2><p class="sub">No encontramos compras activas para ' + esc(d.email) +
       '. Si ya pagaste, en unos minutos aparece.</p><a class="btn" href="https://wa.me/' + WA + '" target="_blank">Escribir por WhatsApp</a></div>';
     return;
   }
-  var h = '';
-  d.productos.forEach(function(p){
-    h += '<div class="card"><h2>' + esc(p.nombre) + '</h2>' + (p.bienvenida ? '<p class="sub">' + esc(p.bienvenida) + '</p>' : '');
-    if (p.secciones.length){
-      var total = p.secciones.filter(function(s){ return esDia(s.n); }).length || p.secciones.length;
-      var hechos = p.hechos || [];
-      var abrir = 0;
-      if (hechos.length){ abrir = -1; p.secciones.forEach(function(s, i){ if (abrir < 0 && esDia(s.n) && hechos.indexOf(s.n) < 0) abrir = i; }); }
-      h += '<div class="sub" style="margin:0"><b id="cnt_' + p.id + '">0</b> de ' + total + ' días hechos</div>' +
-        '<div class="bar"><i id="bar_' + p.id + '" data-total="' + total + '"></i></div>';
-      p.secciones.forEach(function(s, i){
-        var hecho = hechos.indexOf(s.n) >= 0;
-        h += '<details class="dia' + (hecho ? ' hecho' : '') + '"' + (i === abrir ? ' open' : '') + '><summary><span class="ok">' + (hecho ? '✓' : '') +
-          '</span>' + esc(lindo(s.n)) + '</summary><div class="in">' + botones(s.archivos) +
-          (esDia(s.n) ? '<label class="marca"><input type="checkbox" data-p="' + esc(p.id) + '" data-s="' + esc(s.n) + '"' + (hecho ? ' checked' : '') + '> Ya lo hice</label>' : '') +
-          '</div></details>';
-      });
-      h += botones(p.archivos);
-    } else {
-      h += botones(p.archivos) || '<a class="btn" target="_blank" rel="noopener" href="' + esc(p.carpeta) + '">Abrir ' + esc(p.nombre) + '</a>';
-    }
-    h += '</div>';
-  });
-  h += '<p class="nota">Tu material se abre con tu cuenta de Google <b>' + esc(d.email) + '</b>.<br>' +
+  mostrar();
+}
+
+function prodActual(){
+  var m = location.hash.match(/^#p=([\w-]+)/);
+  if (m) return D.productos.filter(function(p){ return p.id === m[1]; })[0] || null;
+  return D.productos.length === 1 ? D.productos[0] : null;
+}
+
+function mostrar(){
+  if (!D) return;
+  var p = prodActual();
+  if (p) verProducto(p); else verInicio();
+  window.scrollTo(0, 0);
+}
+
+function nota(){
+  return '<p class="nota">Tu material se abre con tu cuenta de Google <b>' + esc(D.email) + '</b>.<br>' +
     '📲 <b>Tip:</b> en el menú del navegador elegí <b>"Agregar a pantalla de inicio"</b> y entrás con un toque, como una app.<br>' +
     '¿Dudas? <a href="https://wa.me/' + WA + '" target="_blank">Escribinos por WhatsApp</a></p>';
-  app.innerHTML = h;
-  document.querySelectorAll('[id^=bar_]').forEach(function(b){ actualizar(b.id.slice(4)); });
+}
+
+function totales(p){
+  var dias = p.secciones.filter(function(s){ return esDia(s.n); });
+  var total = dias.length || p.secciones.length;
+  var hechos = (p.hechos || []).filter(function(h){ return esDia(h); }).length;
+  return { total: total, hechos: hechos };
+}
+
+function verInicio(){
+  var h = '<p class="hola">¿Qué querés abrir hoy?</p>';
+  D.productos.forEach(function(p){
+    var inf = INFO[p.id] || { ico: '✨', img: '', ds: '' };
+    var extra = '';
+    if (p.secciones.length){
+      var t = totales(p);
+      extra = '<span class="ds">' + t.hechos + ' de ' + t.total + ' días hechos</span>' +
+        '<span class="mini"><i style="width:' + Math.round(100 * t.hechos / t.total) + '%"></i></span>';
+    }
+    h += '<a class="prod" href="#p=' + esc(p.id) + '">' +
+      '<span class="tapa">' + inf.ico + (inf.img ? '<img alt="" src="' + inf.img + '" onerror="this.remove()">' : '') + '</span>' +
+      '<span class="tx"><span class="nm">' + esc(p.nombre) + '</span><span class="ds">' + esc(inf.ds) + '</span>' + extra + '</span>' +
+      '<span class="fl">›</span></a>';
+  });
+  app.innerHTML = h + nota();
+}
+
+function verProducto(p){
+  var h = D.productos.length > 1 ? '<button class="volver" onclick="location.hash=\'\'">‹ Mi Espacio</button>' : '';
+  h += '<div class="card"><h2>' + esc(p.nombre) + '</h2>' + (p.bienvenida ? '<p class="sub">' + esc(p.bienvenida) + '</p>' : '');
+  if (p.secciones.length){
+    var t = totales(p);
+    var hechos = p.hechos || [];
+    var abrir = 0;
+    if (hechos.length){ abrir = -1; p.secciones.forEach(function(s, i){ if (abrir < 0 && esDia(s.n) && hechos.indexOf(s.n) < 0) abrir = i; }); }
+    h += '<div class="sub" style="margin:0"><b id="cnt_' + p.id + '">0</b> de ' + t.total + ' días hechos</div>' +
+      '<div class="bar"><i id="bar_' + p.id + '" data-total="' + t.total + '"></i></div>';
+    p.secciones.forEach(function(s, i){
+      var hecho = hechos.indexOf(s.n) >= 0;
+      h += '<details class="dia' + (hecho ? ' hecho' : '') + '"' + (i === abrir ? ' open' : '') + '><summary><span class="ok">' + (hecho ? '✓' : '') +
+        '</span>' + esc(lindo(s.n)) + '</summary><div class="in">' + botones(s.archivos) +
+        (esDia(s.n) ? '<label class="marca"><input type="checkbox" data-p="' + esc(p.id) + '" data-s="' + esc(s.n) + '"' + (hecho ? ' checked' : '') + '> Ya lo hice</label>' : '') +
+        '</div></details>';
+    });
+    h += botones(p.archivos);
+  } else {
+    h += botones(p.archivos) || '<a class="btn" target="_blank" rel="noopener" href="' + esc(p.carpeta) + '">Abrir ' + esc(p.nombre) + '</a>';
+  }
+  h += '</div>';
+  app.innerHTML = h + nota();
+  actualizar(p.id);
   document.querySelectorAll('input[data-p]').forEach(function(c){
     c.addEventListener('change', function(){
       var det = c.closest('details');
       det.classList.toggle('hecho', c.checked);
       det.querySelector('.ok').textContent = c.checked ? '✓' : '';
+      var i = p.hechos.indexOf(c.dataset.s);
+      if (c.checked && i < 0) p.hechos.push(c.dataset.s);
+      if (!c.checked && i >= 0) p.hechos.splice(i, 1);
       actualizar(c.dataset.p);
       api('api=marcar&k=' + encodeURIComponent(K) + '&p=' + encodeURIComponent(c.dataset.p) + '&s=' + encodeURIComponent(c.dataset.s) + '&h=' + (c.checked ? 1 : 0)).catch(function(){});
     });
   });
 }
+
+window.addEventListener('hashchange', mostrar);
 
 function actualizar(p){
   var b = document.getElementById('bar_' + p); if (!b) return;

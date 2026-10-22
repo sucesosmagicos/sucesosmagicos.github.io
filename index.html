@@ -182,6 +182,7 @@ function verProducto(p){
       if (c.checked && i < 0) p.hechos.push(c.dataset.s);
       if (!c.checked && i >= 0) p.hechos.splice(i, 1);
       actualizar(c.dataset.p);
+      cacheGuardar(D);
       api('api=marcar&k=' + encodeURIComponent(K) + '&p=' + encodeURIComponent(c.dataset.p) + '&s=' + encodeURIComponent(c.dataset.s) + '&h=' + (c.checked ? 1 : 0)).catch(function(){});
     });
   });
@@ -210,14 +211,31 @@ function recuperar(aviso){
   };
 }
 
-if (!K) recuperar();
-else api('api=espacio&k=' + encodeURIComponent(K)).then(function(d){
-  if (d.ok) render(d);
-  else { try { localStorage.removeItem('me_k'); } catch(e){} recuperar('Este link no es válido o es viejo. Pedí uno nuevo con tu mail:'); }
-}).catch(function(){
-  app.innerHTML = '<div class="card"><h2>No pudimos cargar tu material</h2><p class="sub">Revisá tu conexión y volvé a intentar.</p>' +
-    '<button class="btn" onclick="location.reload()">Reintentar</button></div>';
-});
+function cacheLeer(){ try { var c = JSON.parse(localStorage.getItem('me_d') || 'null'); return c && c.k === K ? c.d : null; } catch(e){ return null; } }
+function cacheGuardar(d){ try { localStorage.setItem('me_d', JSON.stringify({ k: K, d: d })); } catch(e){} }
+
+function cargar(){
+  var guardado = cacheLeer();
+  if (guardado) render(guardado);   // se muestra al instante lo último guardado
+  else setTimeout(function(){
+    var c = document.querySelector('.carga');
+    if (c) c.innerHTML = '<div class="spin"></div>Cargando tu material…<br><small>La primera vez puede tardar unos segundos.</small>';
+  }, 6000);
+  api('api=espacio&k=' + encodeURIComponent(K)).then(function(d){
+    if (d.ok) { cacheGuardar(d); if (!guardado || JSON.stringify(guardado) !== JSON.stringify(d)) render(d); }
+    else { try { localStorage.removeItem('me_k'); localStorage.removeItem('me_d'); } catch(e){} recuperar('Este link no es válido o es viejo. Pedí uno nuevo con tu mail:'); }
+  }).catch(function(){
+    if (guardado) return;           // sin conexión: queda lo guardado
+    app.innerHTML = '<div class="card"><h2>No pudimos cargar tu material</h2><p class="sub">Revisá tu conexión y volvé a intentar.</p>' +
+      '<button class="btn" onclick="location.reload()">Reintentar</button></div>';
+  });
+}
+
+if (!K) recuperar(); else cargar();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+}
 </script>
 </body>
 </html>

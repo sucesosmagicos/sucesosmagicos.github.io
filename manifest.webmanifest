@@ -1,12 +1,18 @@
 {
+  "id": "/",
   "name": "Mi Espacio · Sucesos Mágicos",
   "short_name": "Mi Espacio",
-  "start_url": "./",
+  "description": "Tu espacio personal con todo tu material de Sucesos Mágicos.",
+  "lang": "es",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#eae2ec",
   "theme_color": "#8408a8",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
